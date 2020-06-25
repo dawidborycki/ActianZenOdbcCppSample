@@ -23,4 +23,6 @@ g++ main.cpp -o actianSample -lodbc
 ```
 
 ## Run the app
-```./actianSample
+```
+./actianSample
+```
