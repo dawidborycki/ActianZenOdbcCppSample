@@ -32,7 +32,7 @@ int main() {
   createSineWaveTable(handleConnection);   
 
   // Generate and insert data
-  const int N = 512;
+  const int N = 16;
   auto data = generateSignal(N);  
 
   insertData(handleConnection, data, N);
@@ -44,5 +44,5 @@ int main() {
   fetchData(handleConnection);
 
   // Disconnect
-  disconnect(handleConnection);  
+  disconnect(handleConnection);
 }

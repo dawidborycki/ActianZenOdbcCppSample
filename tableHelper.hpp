@@ -20,7 +20,7 @@ void dropSineWaveTable(SQLHDBC handleConnection) {
 }
 
 void createSineWaveTable(SQLHDBC handleConnection) {  
-  SQLCHAR createSineWaveTableStatement[] = "CREATE TABLE sineWave (timestamp int, signal real, signalReversed real)";
+  SQLCHAR createSineWaveTableStatement[] = "CREATE TABLE sineWave (timecaptured autotimestamp, signal real, signalReversed real)";
 
   auto statusCode = executeSqlStatement(handleConnection, createSineWaveTableStatement);
   
@@ -32,34 +32,32 @@ void createSineWaveTable(SQLHDBC handleConnection) {
   }
 }
 
-void insertPoint(SQLHDBC handleConnection, int timeStamp, 
+void insertPoint(SQLHDBC handleConnection, 
   double pointSignal, double pointSignalReversed) {
 
   // Prepare statement  
-  std::string insertPointStatement = "INSERT INTO sineWave VALUES("
-    + std::to_string(timeStamp) + ", "
+  std::string insertPointStatement = 
+    "INSERT INTO sineWave (signal, signalReversed) VALUES("    
     + std::to_string(pointSignal) + ", "
     + std::to_string(pointSignalReversed) + ")";    
 
   // Convert to SQLCHAR
   SQLCHAR sqlStatement[1024];
-  strcpy((char *)sqlStatement, insertPointStatement.c_str());
-  
+  strcpy((char *)sqlStatement, insertPointStatement.c_str()); 
+
   // Execute
   executeSqlStatement(handleConnection, sqlStatement);  
 }
 
 void insertData(SQLHDBC handleConnection, double* signal, int signalLength) {
   for(int i = 0; i < signalLength; i++) {
-    insertPoint(handleConnection, i, signal[i], -signal[i]);
+    insertPoint(handleConnection, signal[i], -signal[i]);
   }
 }
 
-
-
 void fetchData(SQLHDBC handleConnection) {
   // SELECT statement
-  SQLCHAR fetchDataStatement[] = "SELECT * FROM sineWave";
+  SQLCHAR fetchDataStatement[] = "SELECT signal, signalReversed FROM sineWave";
 
   // Allocate statement handle
   SQLHSTMT handleStatement = SQL_NULL_HSTMT;  
@@ -69,28 +67,26 @@ void fetchData(SQLHDBC handleConnection) {
   SQLRETURN statusCode = SQLExecDirect(handleStatement, 
     fetchDataStatement, SQL_NTS);  
  
-  // Bind to columns    
-  SQLINTEGER timeStamp = 0;
+  // Bind to columns  
   double signal, signalReversed;  
 
-  const int columnCount = 3;
+  const int columnCount = 2;
   SQLLEN indicator[columnCount];  
-  
-  SQLBindCol(handleStatement, 1, SQL_C_LONG, &timeStamp, 0, &indicator[0]);
-  SQLBindCol(handleStatement, 2, SQL_C_DOUBLE, &signal, 0, &indicator[1]);
-  SQLBindCol(handleStatement, 3, SQL_C_DOUBLE, &signalReversed, 0, &indicator[2]);  
+    
+  SQLBindCol(handleStatement, 1, SQL_C_DOUBLE, &signal, 0, &indicator[0]);
+  SQLBindCol(handleStatement, 2, SQL_C_DOUBLE, &signalReversed, 0, &indicator[1]);  
 
   // Loop through the results
   std::cout << "Fetching data ..." << std::endl;
 
   while(true)
   {
-    auto statusCode = SQLFetch(handleStatement);
+    auto statusCode = SQLFetch(handleStatement);        
 
     // Check status code, and display row data
     if(statusCode == SQL_SUCCESS || statusCode == SQL_SUCCESS_WITH_INFO)
     {
-      std::cout << timeStamp << " " << signal << " " << signalReversed << std::endl;
+      std::cout << signal << " " << signalReversed << std::endl;
     }
     else
     {
